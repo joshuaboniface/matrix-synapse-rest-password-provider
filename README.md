@@ -30,14 +30,18 @@ sudo pip install git+https://github.com/ma1uta/matrix-synapse-rest-password-prov
 If the command fail, double check that the python version still matches. If not, please let us know by opening an issue.
 
 ## Configure
-Add or amend the `password_providers` entry like so:
+Add or amend the `modules` entry like so:
 ```yaml
-password_providers:
+modules:
   - module: "rest_auth_provider.RestAuthProvider"
     config:
       endpoint: "http://change.me.example.com:12345"
 ```
 Set `endpoint` to the value documented with the endpoint provider.
+
+**NOTE:** This requires Synapse 1.46 or later! If you migrate from the legacy `password_providers`, make sure
+to remove the old `RestAuthProvider` entry. If the `password_providers` list is empty, you can also remove it completely or
+comment it out.
 
 ## Use
 1. Install, configure, restart synapse

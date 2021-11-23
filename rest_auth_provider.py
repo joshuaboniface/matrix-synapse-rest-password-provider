@@ -20,17 +20,20 @@
 #
 
 import logging
+from typing import Tuple, Optional, Callable, Awaitable
+
 import requests
-import json
 import time
+import synapse
+from synapse import module_api
 
 logger = logging.getLogger(__name__)
 
 
 class RestAuthProvider(object):
 
-    def __init__(self, config, account_handler):
-        self.account_handler = account_handler
+    def __init__(self, config: dict, api: module_api):
+        self.account_handler = api
 
         if not config.endpoint:
             raise RuntimeError('Missing endpoint config')
@@ -41,6 +44,36 @@ class RestAuthProvider(object):
 
         logger.info('Endpoint: %s', self.endpoint)
         logger.info('Enforce lowercase username during registration: %s', self.regLower)
+
+        # register an auth callback handler
+        # see https://matrix-org.github.io/synapse/latest/modules/password_auth_provider_callbacks.html
+        api.register_password_auth_provider_callbacks(
+            auth_checkers={
+                ("m.login.password", ("password",)): self.check_m_login_password
+            }
+        )
+
+    async def check_m_login_password(self, username: str,
+                                     login_type: str,
+                                     login_dict: "synapse.module_api.JsonDict") -> Optional[
+        Tuple[
+            str,
+            Optional[Callable[["synapse.module_api.LoginResponse"], Awaitable[None]]],
+        ]
+    ]:
+        if login_type != "m.login.password":
+            return None
+
+        # get the complete MXID
+        mxid = self.account_handler.get_qualified_user_id(username)
+
+        # check if the password is valid with the old function
+        password_valid = await self.check_password(mxid, login_dict.get("password"))
+
+        if password_valid:
+            return mxid, None
+        else:
+            return None
 
     async def check_password(self, user_id, password):
         logger.info("Got password check for " + user_id)
