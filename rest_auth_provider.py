@@ -26,6 +26,7 @@ import requests
 import time
 import synapse
 from synapse import module_api
+from synapse.types import UserID
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +92,9 @@ class RestAuthProvider(object):
             logger.info("User not authenticated")
             return False
 
+        types_user_id = UserID.from_string(user_id)
         localpart = user_id.split(":", 1)[0][1:]
+        domain = user_id.split(":", 1)[1][1:]
         logger.info("User %s authenticated", user_id)
 
         registration = False
@@ -117,7 +120,7 @@ class RestAuthProvider(object):
             if "display_name" in profile and ((registration and self.config.setNameOnRegister) or (self.config.setNameOnLogin)):
                 display_name = profile["display_name"]
                 logger.info("Setting display name to '%s' based on profile data", display_name)
-                await store.set_profile_displayname(localpart, display_name)
+                await store.set_profile_displayname(types_user_id, display_name)
             else:
                 logger.info("Display name was not set because it was not given or policy restricted it")
 
