@@ -150,8 +150,8 @@ class RestAuthProvider(object):
 
                     if (self.config.replaceThreepid):
                         for threepid in (await store.user_get_threepids(user_id)):
-                            medium = threepid["medium"].lower()
-                            address = threepid["address"].lower()
+                            medium = threepid.medium.lower()
+                            address = threepid.address.lower()
                             if {"medium": medium, "address": address} not in external_3pids:
                                 logger.info("3PID is not present in external datastore, deleting")
                                 await store.user_delete_threepid(
